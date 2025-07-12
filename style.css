@@ -1,0 +1,46 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #cce6ff;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container {
+    padding: 2rem;
+  }
+  
+  form {
+    margin-bottom: 1rem;
+  }
+  
+  input[type="text"] {
+    padding: 0.5rem;
+    width: 200px;
+  }
+  
+  button {
+    padding: 0.5rem 1rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+  }
+  
+  .toggle {
+    margin: 1rem 0;
+  }
+  
+  #weatherDisplay {
+    margin-top: 2rem;
+  }
+  
+  #weatherGif {
+    width: 250px;
+    height: auto;
+    margin-top: 1rem;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  

@@ -17,6 +17,7 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 const errorMessage = document.getElementById('errorMessage');
 const errorText = document.getElementById('errorText');
 const gifLoading = document.getElementById('gifLoading');
+const forecastContainer = document.getElementById('forecastContainer');
 
 // API Keys
 const VC_API_KEY = 'MB9GFJ6VZ28Y9W7CNVR6UXC88';
@@ -54,7 +55,7 @@ function updateCurrentTime() {
 unitToggle.addEventListener('change', () => {
     currentUnit = unitToggle.checked ? 'metric' : 'us';
     const location = locationName.textContent;
-    if (location) {
+    if (location && location !== '') {
         fetchWeather(location);
     }
 });
@@ -73,6 +74,7 @@ function showLoading() {
     weatherDisplay.classList.add('hidden');
     errorMessage.classList.add('hidden');
     loadingSpinner.classList.remove('hidden');
+    forecastContainer.innerHTML = '';
 }
 
 // Hide loading state
@@ -94,7 +96,7 @@ async function fetchWeather(location) {
     
     const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
         location
-    )}?unitGroup=${currentUnit}&key=${VC_API_KEY}&include=current`;
+    )}?unitGroup=${currentUnit}&key=${VC_API_KEY}&include=current,days`;
 
     try {
         const res = await fetch(url);
@@ -103,6 +105,7 @@ async function fetchWeather(location) {
         }
         const data = await res.json();
         updateWeatherDisplay(data);
+        updateForecast(data.days);
         fetchWeatherGif(data.currentConditions.conditions);
     } catch (err) {
         showError(err.message);
@@ -177,6 +180,67 @@ function updateBackground(conditions) {
     }
     
     document.body.style.background = gradient;
+}
+
+// Update forecast display
+function updateForecast(days) {
+    if (!days || days.length === 0) {
+        forecastContainer.innerHTML = '<p>No forecast data available</p>';
+        return;
+    }
+
+    // Get next 5 days (skip today)
+    const forecastDays = days.slice(1, 6);
+    const tempUnitSymbol = currentUnit === 'metric' ? '°C' : '°F';
+    
+    forecastContainer.innerHTML = forecastDays.map(day => {
+        const date = new Date(day.datetime);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayDate = date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        const weatherIcon = getWeatherIcon(day.conditions);
+        const maxTemp = Math.round(day.tempmax);
+        const minTemp = Math.round(day.tempmin);
+        
+        return `
+            <div class="forecast-card">
+                <div class="forecast-day">${dayName}</div>
+                <div class="forecast-date">${dayDate}</div>
+                <div class="forecast-icon">${weatherIcon}</div>
+                <div class="forecast-temp">${maxTemp}°</div>
+                <div class="forecast-temp-min">${minTemp}°</div>
+                <div class="forecast-condition">${day.conditions}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Get weather icon based on conditions
+function getWeatherIcon(conditions) {
+    const condition = conditions.toLowerCase();
+    
+    if (condition.includes('clear') || condition.includes('sunny')) {
+        return '<i class="fas fa-sun"></i>';
+    } else if (condition.includes('partly cloudy')) {
+        return '<i class="fas fa-cloud-sun"></i>';
+    } else if (condition.includes('cloudy') || condition.includes('overcast')) {
+        return '<i class="fas fa-cloud"></i>';
+    } else if (condition.includes('rain') || condition.includes('drizzle')) {
+        return '<i class="fas fa-cloud-rain"></i>';
+    } else if (condition.includes('snow') || condition.includes('blizzard')) {
+        return '<i class="fas fa-snowflake"></i>';
+    } else if (condition.includes('storm') || condition.includes('thunder')) {
+        return '<i class="fas fa-bolt"></i>';
+    } else if (condition.includes('fog') || condition.includes('mist')) {
+        return '<i class="fas fa-smog"></i>';
+    } else if (condition.includes('wind')) {
+        return '<i class="fas fa-wind"></i>';
+    } else {
+        return '<i class="fas fa-cloud"></i>';
+    }
 }
 
 // Fetch weather GIF

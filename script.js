@@ -16,10 +16,11 @@ const visibility = document.getElementById('visibility');
 const loadingSpinner = document.getElementById('loadingSpinner');
 const errorMessage = document.getElementById('errorMessage');
 const errorText = document.getElementById('errorText');
+const gifLoading = document.getElementById('gifLoading');
 
 // API Keys
 const VC_API_KEY = 'MB9GFJ6VZ28Y9W7CNVR6UXC88';
-const GIPHY_API_KEY = 'EykzpJVlrFonu3IRV8QG0qujnD8pJt0C&s';
+const GIPHY_API_KEY = 'EykzpJVlrFonu3IRV8QG0qujnD8pJt0C';
 
 let currentUnit = 'us'; // 'us' for Fahrenheit, 'metric' for Celsius
 
@@ -181,7 +182,34 @@ function updateBackground(conditions) {
 // Fetch weather GIF
 async function fetchWeatherGif(condition) {
     const query = condition.toLowerCase().split(',')[0].trim();
-    const giphyUrl = `https://api.giphy.com/v1/gifs/translate?api_key=${GIPHY_API_KEY}&s=${encodeURIComponent(query + ' weather')}`;
+    
+    // Show GIF loading state
+    gifLoading.classList.remove('hidden');
+    weatherGif.style.display = 'none';
+    
+    // Create better search queries for different weather conditions
+    let searchQuery = query + ' weather';
+    
+    // Map specific conditions to better search terms
+    const conditionMap = {
+        'clear': 'sunny weather',
+        'partly cloudy': 'partly cloudy weather',
+        'cloudy': 'cloudy weather',
+        'overcast': 'overcast weather',
+        'rain': 'rainy weather',
+        'drizzle': 'drizzle rain',
+        'snow': 'snow weather',
+        'storm': 'storm weather',
+        'thunder': 'thunderstorm',
+        'fog': 'foggy weather',
+        'mist': 'misty weather',
+        'haze': 'hazy weather'
+    };
+    
+    // Use mapped query if available, otherwise use original
+    searchQuery = conditionMap[query] || searchQuery;
+    
+    const giphyUrl = `https://api.giphy.com/v1/gifs/translate?api_key=${GIPHY_API_KEY}&s=${encodeURIComponent(searchQuery)}&rating=g`;
 
     try {
         const res = await fetch(giphyUrl);
@@ -191,13 +219,27 @@ async function fetchWeatherGif(condition) {
         const data = await res.json();
         
         if (data.data && data.data.images) {
-            weatherGif.src = data.data.images.original.url;
+            // Use fixed_height_small for better performance
+            const gifUrl = data.data.images.fixed_height_small?.url || data.data.images.original.url;
+            
+            // Hide loading and show GIF
+            gifLoading.classList.add('hidden');
             weatherGif.style.display = 'block';
+            weatherGif.src = gifUrl;
+            
+            // Add loading animation
+            weatherGif.style.opacity = '0';
+            weatherGif.onload = () => {
+                weatherGif.style.transition = 'opacity 0.3s ease';
+                weatherGif.style.opacity = '1';
+            };
         } else {
+            gifLoading.classList.add('hidden');
             weatherGif.style.display = 'none';
         }
     } catch (err) {
         console.error('Could not load GIF:', err.message);
+        gifLoading.classList.add('hidden');
         weatherGif.style.display = 'none';
     }
 }
